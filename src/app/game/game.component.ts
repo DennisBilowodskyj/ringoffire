@@ -12,8 +12,15 @@ import { FormsModule } from '@angular/forms';
 import { MatDialogModule } from '@angular/material/dialog';
 import { GameInfoComponent } from '../game-info/game-info.component';
 import { inject } from '@angular/core';
-import { Firestore, collection, collectionData } from '@angular/fire/firestore';
+import {
+  Firestore,
+  addDoc,
+  collection,
+  collectionData,
+  doc,
+} from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-game',
@@ -29,7 +36,6 @@ import { Observable } from 'rxjs';
     FormsModule,
     MatDialogModule,
     GameInfoComponent,
-    
   ],
   templateUrl: './game.component.html',
   styleUrl: './game.component.scss',
@@ -41,7 +47,7 @@ export class GameComponent implements OnInit {
   firestore: Firestore = inject(Firestore);
   games$: Observable<any[]>;
 
-  constructor(public dialog: MatDialog) {
+  constructor(public route: ActivatedRoute, public dialog: MatDialog) {
     this.game = new Game();
     const aCollection = collection(this.firestore, 'games');
     this.games$ = collectionData(aCollection);
@@ -49,13 +55,19 @@ export class GameComponent implements OnInit {
 
   ngOnInit(): void {
     this.newGame();
-    this.games$.subscribe((games) =>{
-      console.log('game update', games)
+    this.route.params.subscribe((params) => {
+      console.log(params['id']); 
+
+      if (params['id']) {
+        const gameId = params['id'];
+        const gameDocRef = doc(this.firestore, 'games', gameId);
+
+        this.games$ = collectionData(gameDocRef);
+        this.games$.subscribe((game) => {
+          console.log('game update', game);
+        });
+      }
     });
-      
-     
-      
-     
   }
 
   takeCard() {
@@ -80,7 +92,10 @@ export class GameComponent implements OnInit {
 
   newGame() {
     this.game = new Game();
-    console.log(this.game);
+    //console.log(this.game);
+    //addDoc(collection(this.firestore, 'games'), this.game.toJson());
+    //{
+    //}
   }
 
   openDialog(): void {

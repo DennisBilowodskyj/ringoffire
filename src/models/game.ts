@@ -16,4 +16,13 @@ export class Game{
         this.stack.sort(() => Math.random() - 0.5);
         
     }
+
+    public toJson(){
+        return{
+            players: this.players,
+            stack: this.stack,
+            playedCards: this.playedCards,
+            currentPlayer: this.currentPlayer
+        };
+    }
 }

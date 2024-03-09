@@ -1,13 +1,11 @@
 import { initializeApp } from "firebase/app";
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom } from '@angular/core';
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-
-export const appConfig: ApplicationConfig = {
-  providers: [provideRouter(routes), provideAnimationsAsync()]
-};
+import { provideFirebaseApp } from "@angular/fire/app";
+import { getFirestore, provideFirestore } from "@angular/fire/firestore";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBXB5-u3U67sg7xAugl-92ha5yiZ5_844E",
@@ -18,4 +16,14 @@ const firebaseConfig = {
   appId: "1:747622262659:web:475bfbc8f9f284b23eb8b6"
 };
 
-const app = initializeApp(firebaseConfig);
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes), provideAnimationsAsync() ,
+    importProvidersFrom([
+    provideFirebaseApp(() => initializeApp(firebaseConfig)),
+    provideFirestore(() => getFirestore()),
+  ])]
+};
+
+
+
