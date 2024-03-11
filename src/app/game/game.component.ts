@@ -18,6 +18,7 @@ import {
   collection,
   collectionData,
   doc,
+  onSnapshot,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
@@ -46,7 +47,7 @@ export class GameComponent implements OnInit {
   game: Game;
   firestore: Firestore = inject(Firestore);
   games$: Observable<any[]>;
-
+  unsub: any;
   constructor(public route: ActivatedRoute, public dialog: MatDialog) {
     this.game = new Game();
     const aCollection = collection(this.firestore, 'games');
@@ -54,19 +55,25 @@ export class GameComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.newGame();
     this.route.params.subscribe((params) => {
-      console.log(params['id']); 
+    this.newGame();
+    const gameId = params['id'];
+    const gameDocRef = doc(this.firestore, 'games', gameId);
+   
+      console.log(params['id']);
+      this.unsub = onSnapshot(gameDocRef, (gameDoc) => {
+        if (params['id']) {
+          this.games$.subscribe((game:any) => {
+            console.log('game update', game);
+            this.game.currentPlayer = game.currentPlayer;
+            this.game.playedCards = game.playedCards;
+            this.game.players = game.players;
+            this.game.stack = game.stack;
 
-      if (params['id']) {
-        const gameId = params['id'];
-        const gameDocRef = doc(this.firestore, 'games', gameId);
 
-        this.games$ = collectionData(gameDocRef);
-        this.games$.subscribe((game) => {
-          console.log('game update', game);
-        });
-      }
+          });
+        }
+      });
     });
   }
 
