@@ -19,6 +19,7 @@ import {
   collectionData,
   doc,
   onSnapshot,
+  updateDoc,
 } from '@angular/fire/firestore';
 import { Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
@@ -42,12 +43,12 @@ import { ActivatedRoute } from '@angular/router';
   styleUrl: './game.component.scss',
 })
 export class GameComponent implements OnInit {
-  pickCardAnimation = false;
-  currentCard: string | undefined = '';
   game: Game;
+  gameId: string | undefined;
   firestore: Firestore = inject(Firestore);
   games$: Observable<any[]>;
   unsub: any;
+
   constructor(public route: ActivatedRoute, public dialog: MatDialog) {
     this.game = new Game();
     const aCollection = collection(this.firestore, 'games');
@@ -56,42 +57,52 @@ export class GameComponent implements OnInit {
 
   ngOnInit(): void {
     this.route.params.subscribe((params) => {
-    this.newGame();
-    const gameId = params['id'];
-    const gameDocRef = doc(this.firestore, 'games', gameId);
-   
+      this.newGame();
+      const gameId = params['id']; // Extrahiere die Spiel-ID aus dem `params` Objekt.
+      const gameDocRef = doc(this.firestore, 'games', gameId); // Erstelle eine Referenz auf das Spiel-Dokument in Firestore
+      // mit der angegebenen Spiel-ID.
+      this.gameId = params['id'];
       console.log(params['id']);
       this.unsub = onSnapshot(gameDocRef, (gameDoc) => {
-        if (params['id']) {
-          this.games$.subscribe((game:any) => {
-            console.log('game update', game);
-            this.game.currentPlayer = game.currentPlayer;
-            this.game.playedCards = game.playedCards;
-            this.game.players = game.players;
-            this.game.stack = game.stack;
+        // Abonniere den `onSnapshot` Observable von Firestore.
+        // Dieser Observable emittet ein `DocumentSnapshot` Objekt
+        // jedes Mal, wenn sich das Spiel-Dokument ändert.
+        if (gameDoc.exists()) {
+          // Prüfe, ob das Spiel-Dokument in Firestore existiert.
+          const gameData = gameDoc.data(); // Extrahiere die Spieldaten aus dem `DocumentSnapshot` Objekt.
+          console.log('game update', gameData);
+          this.game.currentPlayer = gameData['currentPlayer']; // Weise den aktuellen Spieler aus den Spieldaten dem lokalen `game` Objekt zu.
 
+          this.game.playedCards = gameData['playedCards']; // Weise die gespielten Karten aus den Spieldaten dem lokalen `game` Objekt zu.
 
-          });
+          this.game.players = gameData['players']; // Weise die Spielerliste aus den Spieldaten dem lokalen `game` Objekt zu.
+
+          this.game.stack = gameData['stack']; // Weise den Kartenstapel aus den Spieldaten dem lokalen `game` Objekt zu.
+          this.game.pickCardAnimation = gameData['pickCardAnimation'];
+          this.game.currentCard = gameData['currentCard'];
         }
       });
     });
   }
 
   takeCard() {
-    if (!this.pickCardAnimation) {
-      this.currentCard = this.game.stack.pop();
-      this.pickCardAnimation = true;
-      console.log('New card: ' + this.currentCard);
+    if (!this.game.pickCardAnimation) {
+      this.game.currentCard = this.game.stack.pop();
+      this.game.pickCardAnimation = true;
+      console.log('New card: ' + this.game.currentCard);
       console.log('Game is: ' + this.game);
 
       this.game.currentPlayer++;
       this.game.currentPlayer =
         this.game.currentPlayer % this.game.players.length;
+        this.saveGame();
+
 
       setTimeout(() => {
-        if (this.currentCard != undefined) {
-          this.game.playedCards.push(this.currentCard);
-          this.pickCardAnimation = false;
+        if (this.game.currentCard != undefined) {
+          this.game.playedCards.push(this.game.currentCard);
+          this.game.pickCardAnimation = false;
+          this.saveGame();
         }
       }, 1000);
     }
@@ -100,9 +111,7 @@ export class GameComponent implements OnInit {
   newGame() {
     this.game = new Game();
     //console.log(this.game);
-    //addDoc(collection(this.firestore, 'games'), this.game.toJson());
-    //{
-    //}
+    //
   }
 
   openDialog(): void {
@@ -111,7 +120,17 @@ export class GameComponent implements OnInit {
     dialogRef.afterClosed().subscribe((name: string) => {
       if (name && name.length > 0) {
         this.game.players.push(name);
+        this.saveGame();
       }
     });
+  }
+
+  saveGame() {
+    if (!this.gameId) {
+      console.error('Game ID is not defined.');
+      return;
+    }
+    const gameDocRef = doc(this.firestore, 'games', this.gameId);
+    updateDoc(gameDocRef, this.game.toJson());
   }
 }

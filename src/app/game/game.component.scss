@@ -2,10 +2,11 @@
     width: 100vw;
     height: 100vh;
     max-width: 100%;
-    background-image: url('./../../assets/img/board.jpg');
+    background-image: url('./../../assets/img/ai-generated.jpg');
     display: flex;
     justify-content: center;
     align-items: center;
+    background-size: cover;
 
 }
 
@@ -58,6 +59,7 @@
 .player-position{
         position: absolute;
         right: 0;
+        z-index: 1;
         
     }
 

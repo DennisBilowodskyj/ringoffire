@@ -13,6 +13,19 @@
     }
 }
 
+.start-font{
+    position: absolute;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    top: 90px;
+    img{
+        width: 15vw;
+        height: auto;
+    }
+
+}
 .start-label-box{
     position: absolute;
     left: 0;
